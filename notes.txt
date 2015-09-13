@@ -1,4 +1,4 @@
-
+﻿
 [android studio]
 command line 因為撞名 導致 install -r 也失敗時
 adb uninstall com.example.fish60.myfirstapp (fullly qualified name)
@@ -13,5 +13,15 @@ settings appearance, font size (editor and bar)
 add existing files to github
 http://befused.com/git/existing-project-github
 
+[github]
+從網頁第一次抓下來, 複製網址然後開 git shell
+git clone https://github.com/fish60/Spoon-Knife.git
+
+[github]
+使 local 端可以從 http syn (相當於下載)
+git remote add upstream https://github.com/octocat/Spoon-Knife.git
+
+[github]
+使 local 端可以向 http syn (相當於上傳, 但是要網頁確認)
 
 
