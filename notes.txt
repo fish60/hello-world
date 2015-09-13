@@ -1,0 +1,17 @@
+
+[android studio]
+command line 因為撞名 導致 install -r 也失敗時
+adb uninstall com.example.fish60.myfirstapp (fullly qualified name)
+
+[android studio]
+-scale 0.X --> -scale 0.25
+Alt + space
+settings appearance, font size (editor and bar)
+
+
+[github]
+add existing files to github
+http://befused.com/git/existing-project-github
+
+
+
