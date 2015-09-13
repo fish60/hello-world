@@ -22,6 +22,6 @@ git clone https://github.com/fish60/Spoon-Knife.git
 git remote add upstream https://github.com/octocat/Spoon-Knife.git
 
 [github]
-使 local 端可以向 http syn (相當於上傳, 但是要網頁確認)
+使 local 端可以向 http syn (相當於上傳, 但是要網頁確認, 沒用 branch 會直接 commit)
 
 
