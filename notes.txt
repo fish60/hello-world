@@ -25,4 +25,9 @@ git remote add upstream https://github.com/octocat/Spoon-Knife.git
 使 local 端可以向 http syn (相當於上傳, 沒用 branch 會直接 commit, 然後再按 Sync)
 要網頁確認的應該是要開 branch, 再使用 pull request
 
+[github]
+安裝位置
+C:\Users\Chung-Che\AppData\Local\GitHub\
+PortableGit_c2ba306e536fdf878271f7fe636a147ff37326ad\etc
+
 
