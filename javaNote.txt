@@ -558,23 +558,162 @@ Java Lambda Tutorial
 http://openhome.cc/Gossip/CodeData/JavaLambdaTutorial/index.html
 
 
+匿名類別與 Lambda
 
 
+String[] names = {"Justin", "caterpillar", "Bush"};
+Arrays.sort(names, new Comparator<String>() {          // 匿名類別
+    public int compare(String name1, String name2) {   // 實作 compare
+        return name1.length() - name2.length();
+    }
+});
+-->
+Comparator<String> byLength = new Comparator<String>() {  // 用變數增加程式可讀性
+    public int compare(String name1, String name2) {
+        return name1.length() - name2.length();
+    }
+};
+String[] names = {"Justin", "caterpillar", "Bush"};
+Arrays.sort(names, byLength);
+
+JDK8 的 Lambda 特性
+-->
+new C~<> 重複, 實作的可知是 compare
+-->
+Comparator<String> byLength = (String name1, String name2) -> name1.length() - name2.length();
+-->
+String 再省
+-->
+Comparator<String> byLength = (name1, name2) -> name1.length() - name2.length();
+
+==>
+String[] names = {"Justin", "caterpillar", "Bush"};
+Arrays.sort(names, (name1, name2) -> name1.length() - name2.length());
+// 代換 byLength
 
 
+package cc.openhome;
+
+public class StringOrder {
+    public static int byLength(String s1, String s2) {
+        return s1.length() - s2.length();
+    }
+ 
+    public static int byLexicography(String s1, String s2) {
+        return s1.compareTo(s2);
+    }
+ 
+    public static int byLexicographyIgnoreCase(String s1, String s2) {
+        return s1.compareToIgnoreCase(s2);
+    }
+}
+
+==>
+String[] names = {"Justin", "caterpillar", "Bush"};
+Arrays.sort(names, (name1, name2) -> StringOrder.byLength(name1, name2));
+// 因為有 StringOrder.byLength(), 就是 return s1.length() - s2.length()
+-->
+String[] names = {"Justin", "caterpillar", "Bush"};
+Arrays.sort(names, StringOrder::byLength);
 
 
+字典順序排序名稱
+String[] names = {"Justin", "caterpillar", "Bush"};
+Arrays.sort(names, StringOrder::byLexicography);    // 注意是 s1.compareTo(s2)
+-->
+String[] names = {"Justin", "caterpillar", "Bush"};
+Arrays.sort(names, String::compareTo);              // 是否表示不需要寫 byLexicography() ?
+// 可能是，這樣才有省到，直接參考 String 類別的 compareTo()
 
 
+[ 細節 ]
+Comparator<String> byLength = (String name1, String name2) -> name1.length() - name2.length();
+等號右邊是Lambda表示式（Expression），等號左邊是作為Lambda表示式的目標型態（Target type）
+
+Lambda 表示式
+(String name1, String name2) -> name1.length() - name2.length()
+
+若必須使用多行陳述，可以加入{}定義陳述區塊，如果有傳回值，必須加上return
+ex:
+(String name1, String name2) -> {       // 大括號
+    String n1 = name1.trim();
+    String n2 = name2.trim();
+    ...
+    return n1.length() - n2.length();   // 多行有傳回值, return
+}
+
+在運用Lambda時，儘量使用簡單的運算式
+如果實作比較複雜，可以考慮方法參數等其他方式
+
+如果不接受任何參數，也必須寫下括號
+() -> "Justin"               // 不接受參數，傳回字串
+() -> System.out.println()   // 不接受參數，沒有傳回值
+
+單只有Lambda表示式的情況下，參數的型態必須寫出來  (如上的 String 沒有省)
+有目標型態的話，在編譯器可推斷出類型的情況下，就可以不寫出Lambda表示式的參數型態
+(整行來看，可推斷時可省)
+Comparator<String> byLength = (name1, name2) -> name1.length() - name2.length();
+
+Lambda 表示式本身是中性的，不代表任何一種物件
+同樣的 Lambda 表示式，可用來表示   不同目標   型態的物件實作
 
 
+public interface Func<P, R> {
+    R apply(P p1, P p2);
+}
+
+Func<String, Integer> func = (name1, name2) -> name1.length() - name2.length();
+
+就用來表示目標型態為 Func<String, Integer> 的物件實作
+
+介面只有一個方法要實作時，會只想關心  參數  及  實作本體，
+不想理會類別與方法名稱
+
+Lambda 表示式只關心方法簽署上的參數與回傳定義，但忽略方法名稱
+
+如果函式介面上定義的方法只接受一個參數
+public interface Func {
+    public void apply(String s);
+}
+-->
+Func f = (s) -> System.out.println(s);
+-->
+Func f = s -> System.out.println(s);   // 只有一個參數
+
+新標註 @FunctionalInterface --> 函式介面
+-->
+@FunctionalInterface
+public interface Func<P, R> {
+    R apply(P p);
+}
 
 
+@FunctionalInterface
+public interface Function<P, R> {
+    R call(P p);
+    R call(P p1, P p2);
+}
+-->
+使用了@FunctinalInterface來標註，而本身並非函式介面的話
+就會引發編譯錯誤
+--> 
+multiple non-overriding abstract methods
 
+[函式介面] ... 可能要再看 ......
+函式介面就是介面，但要求僅具    單一抽象方法   !!!!!
 
-
-
-
+例如
+public interface Runnable {
+    void run();
+}
+ 
+public interface Callable<V> {
+    V call() throws Exception;
+}
+ 
+public interface Comparator<T> {
+    int compare(T o1, T o2);
+}
 
 
 
