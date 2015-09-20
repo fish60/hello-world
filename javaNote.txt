@@ -241,6 +241,333 @@ public enum Priority2 {
 關於標註 (git 出問題?)
 無法 commit?
 
+--
+
+為了重新定義方法
+@Override
+public void Run() {
+    ...
+}
+
+編譯器看到@Override這個標註，瞭解必須檢查父類別中是否存在Run()方法
+父類別實際上沒有這個方法時，會回報錯誤
+
+
+如果某個方法原先存在於API中，後來不建議再使用，可以於該方法上標註
+@Deprecated
+
+
+在JDK5之後加入泛型支援，對於支援泛型的API，
+建議明確指定泛型真正型態，如果沒有指定的話，編譯器會提出警訊。
+
+List list = new ArrayList();
+由於List與ArrayList支援泛型，但這邊沒有指定泛型真正型態，編譯時會出現以下訊息
+Note: xxx.java uses unchecked or unsafe operations.
+Note: Recompile with -Xlint:unchecked for details.
+
+可以使用@SuppressWarnings指定抑制unckecked的警訊產生
+@SuppressWarnings(value={"unchecked"})
+public void doSome() {
+     List list = new ArrayList();
+     list.add("Some");
+}
+
+想呼叫@Deprecated標示過的方法，又不想看到警訊
+@SuppressWarnings(value={"deprecation"})
+
+指定抑制多項警訊
+@SuppressWarnings(value={"unchecked", "deprecation"})
+
+
+JDK7 @SafeVarargs
+支援可變長度引數
+public class Util {
+    public static <T> void doSome(List<String>... varargs) {
+        ...略
+    }
+}
+
+List<String> list1 = new ArrayList<>();
+List<String> list2 = new ArrayList<>();
+Util.doSome(list1, list2);              --> warning
+
+SafeVarargs的API文件中就有個範例：
+
+    public static <T> void doSome(List<String>... varargs) {
+        Object[] array = stringLists;
+        List<Integer> tmpList = Arrays.asList(42);
+        array[0] = tmpList; // 語意不對，不過編譯器不會有警訊
+        String s = stringLists[0].get(0); // 執行時期發生 ClassCastException
+    }
+
+******************** 不熟，有空再看??? ********************
+這類問題稱為heap pollution
+-->
+對開發doSome()的人加以提醒，而不是讓使用doSome()的人提心吊膽
+-->
+在使用泛型定義不定長度引數時，編譯器會提示開發人員，
+有沒有注意到heap pollution問題，如果開發人員確定避免了這個問題，
+則可以使用@SafeVarargs加以標註
+
+public class Util {
+    @SafeVarargs
+    public static <T> void doSome(List<String>... varargs) {
+        ...略
+    }
+}
+
+
+JDK8為了支援Lambda，也提出了一個@FunctionalInterface標註，
+讓編譯器可協助檢查interface是否可做為Lambda的目標型態
+(後續)
+
+
+每個標註都會有個標註型態（Annotation type），
+所有標註型態其實都是 java.lang.annotation.Annotation子介面，
+@Override的標註型態為java.lang.Override，
+@Deprecated的標註型態為java.lang.Deprecated
+
+
+標示標註（Marker Annotation）
+標註名稱本身就是資訊，對編譯器或應用程式來說，
+主要是檢查是否有標註出現，並作出對應的動作
+
+@Override的作用就是標示標註。要定義一個標註可以使用@interface
+
+
+package cc.openhome;
+public @interface Test {}
+
+--> 編譯 --> 使用
+
+public class SomeTestCase {
+    @Test
+    public void testDoSome() {
+        ...略
+    }
+}
+
+設定單值標註（Single-value Annotation）
+
+package cc.openhome;
+public @interface Test2 {
+    int timeout();           // timeout屬性可以設定int值
+}
+
+@Test2(timeout = 10)
+public void testDoSome2() {
+    ...
+}
+
+
+package cc.openhome;
+public @interface Test3 {
+    String[] args();         // 陣列形式
+}
+
+@Test3(args = {"arg1", "arg2"})
+public void testDoSome3() {
+    ...
+}
+
+
+如果屬性名稱為value，則可以省略屬性名稱，直接指定值
+
+package cc.openhome;
+public @interface Ignore {
+    String value();           // 叫做 value
+}
+可以使用@Ignore(value = "message")指定，也可以使用@Ignore("message")指定
+
+
+package cc.openhome;
+public @interface TestClass {
+    Class[] value();
+}
+@TestClass(value = {Some.class, Other.class})指定，
+也可以使用@TestClass({Some.class, Other.class})
+
+
+可以對成員設定預設值，使用default關鍵字即可
+package cc.openhome;
+public @interface Test4 {
+    int timeout() default 0;
+    String message default "";
+}
+
+
+Class設定的屬性比較特別，default之後不能接上null，
+會發生編譯錯誤，必須自訂一個類別作為預設值
+package cc.openhome;
+public @interface Test5 {
+    Class expected() default Default.class;   // 自訂
+    class Default {}                          // class 名: Default()
+}
+
+
+設定陣列預設值的話，可以在default之後加上{}
+必要時{}中可放置元素值
+package cc.openhome;
+public @interface Test7 {
+    String[] args() default {"arg1", "arg2"}; // 可以是 {}
+}
+
+
+使用java.lang.annotation.Target限定標註使用位置，
+限定時可指定java.lang.annotation.ElementType的列舉值
+
+package java.lang.annotation;
+public enum ElementType {
+    TYPE,                  // 用於類別、介面、列舉等
+    FIELD,                 // 用於資料成員
+    METHOD,                // 用於方法
+    PARAMETER,             // 用於方法上的參數
+    CONSTRUCTOR,           // 用於建構式
+    LOCAL_VARIABLE,        // 用於區域變數
+    ANNOTATION_TYPE,       // 用於標註型態
+    PACKAGE,               // 適用套件
+    TYPE_PARAMETER,        // 用於泛型宣告，JDK8新增
+    TYPE_USE               // 用於各種型態，JDK8新增
+}
+
+package cc.openhome;
+
+import java.lang.annotation.Target;         // 需要 Target
+import java.lang.annotation.ElementType;    // 需要 ElementType
+
+@Target({ElementType.METHOD})      // 加上這行，限定用在 method 上
+public @interface Test8 {}
+
+
+如果想要將標註資料加入文件，可以使用java.lang.annotation.Documented
+
+package cc.openhome;
+
+import java.lang.annotation.Documented;  // 需要 Documented
+
+@Documented                              // Documented
+public @interface Test9 {}
+
+如果在文件中使用到@Test9，則產生  JavaDoc  後，文件中就會包括@Test9的資訊
+
+
+預設父類別設定的標註，不會被繼承至子類別
+可以在定義標註時設定java.lang.annotation.Inherited標註，
+就可以讓標註被子類別繼承
+
+package cc.openhome;
+
+import java.lang.annotation.Inherited;  // 需要 Inherited
+
+@Inherited                              // Inherited
+public @interface Test10 {}
+
+
+JDK8新增了型態標註（Type Annotations）
+可以讓你在有型態資訊出現的任何位置進行標註
+http://types.cs.washington.edu/jsr308/specification/java-annotation-design.html
+
+List<@Email String> emails = ...;
+
+
+package cc.openhome;
+
+import java.lang.annotation.Target;
+import java.lang.annotation.ElementType;
+
+@Target({ElementType.TYPE_USE})         // 用於各種型態，JDK8新增
+public @interface Email {}
+
+
+============= 要知道為何要用 ... (以下至少知道如何用)
+
+
+讀取標註資訊
+自訂標註時使用java.lang.annotation.Retention
+搭配java.lang.annotation.RetentionPolicy列舉指定
+
+package java.lang.annotation;
+public enum RetentionPolicy {
+    SOURCE,  // 標註資訊留在原始碼（不會儲存至.class檔案）
+    CLASS,   // 標註資訊會儲存至.class檔案，但執行時期無法讀取
+    RUNTIME  // 標註資訊會儲存至.class檔案，但執行時期可以讀取
+}
+
+RetentionPolicy為SOURCE的例子為@SuppressWarnings，
+其作用僅在告知編譯器抑制警訊，所以不必將這個資訊儲存於.class檔案，
+@Override也是，其作用僅在告知編譯器檢查是否真為重新定義方法
+
+http://openhome.cc/Gossip/Java/ReadAnnotation.html
+
+1. 設定標註 RUNTIME 執行時可讀取
+package cc.openhome;
+
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+
+@Retention(RetentionPolicy.RUNTIME)
+public @interface Debug {
+    String name();
+    String value();
+}
+
+2. @Debug 用在 class doOther() 上
+package cc.openhome;
+
+public class Other {
+    @Debug(name = "caterpillar", value = "2011/10/10")
+    public void doOther() {
+        ...略
+    }
+}
+
+3. 讀取@Debug設定的資訊，主要是透過Java的   Reflection API  
+...
+import java.lang.annotation.Annotation;
+import java.lang.reflect.Method;
+import static java.lang.System.out;
+
+public class DebugTool {
+    public static void main(String[] args) throws NoSuchMethodException {
+        Class<Other> c = Other.class;
+        Method method = c.getMethod("doOther");
+        if(method.isAnnotationPresent(Debug.class)) { // 確認是否有 @Debug 標註
+            out.println("已設定 @Debug 標註");
+            // 取得 @Debug 實例                       // 已知為 @Debug
+            Debug debug = method.getAnnotation(Debug.class);  // 使用方法
+            out.printf("value: %s%n", debug.value());
+            out.printf("name : %s%n", debug.name());
+        } else {
+            out.println("沒有設定 @Debug 標註");
+        }
+
+        Annotation[] annotations = method.getAnnotations();
+        for(Annotation annotation : annotations) {
+            out.println(annotation.annotationType().getName());
+        } // 可以看有哪些標註 --> cc.openhome.Debug
+    }
+}
+
+
+使用標註的更實用範例 (之後再看?)
+http://openhome.cc/Gossip/JavaEssence/AnnotationListener.html
+
+===================
+
+Java Lambda Tutorial
+http://openhome.cc/Gossip/CodeData/JavaLambdaTutorial/index.html
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
