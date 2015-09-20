@@ -7,4 +7,255 @@ http://openhome.cc/Gossip/Java/
 
 ------------------------------------------
 
+基本款，沒有 constructor 也沒有 implementation
+
+public enum Action {
+    STOP, RIGHT, LEFT, UP, DOWN
+}
+
+enum定義了特殊的類別，繼承自java.lang.Enum，
+不過這是由編譯器處理，直接撰寫程式繼承Enum類別會被編譯器拒絕。
+在編譯過後，會產生 Action.class 檔案
+
+public final class Action extends Enum {
+    略...
+    private Action(String s, int i) {
+        super(s, i);
+    }
+    public static final Action STOP;
+    public static final Action RIGHT;
+    public static final Action LEFT;
+    public static final Action UP;
+    public static final Action DOWN;
+    略...
+    static {
+        STOP = new Action("STOP", 0);
+        RIGHT = new Action("RIGHT", 1);
+        LEFT = new Action("LEFT", 2);
+        UP = new Action("UP", 3);
+        DOWN = new Action("DOWN", 4);
+        略...
+    }
+}
+範例的enum定義的 Action 實際上是個  類別  ，
+而enum中列舉的STOP、RIGHT、LEFT、UP、DOWN常數，
+實際上是  public static final ，且為  Action 實例
+
+使用方法：
+...
+    public static void main(String[] args) {
+        play(Action.RIGHT);               // public final class Action
+        play(Action.UP);                  // public static final Action UP ?
+    } 
+...
+    public static void play(Action action) {
+        switch(action) {
+            case STOP:  // 也就是Action.STOP
+                out.println("播放停止動畫");
+                break;
+
+
+http://openhome.cc/Gossip/Java/EnumClass.html
+
+switch比對時可以使用Enum型態，實際上也是利用了Enum的ordinal()取得int值
+Enum的valueOf()方法，可以傳入字串與Enum實例，它會傳回對應的列舉實例
+
+Action2 action = Enum.valueOf(Action2.class, "UP");
+System.out.println(Action2.UP == action);          // true
+
+Action2 action = Action2.valueOf("UP");
+System.out.println(Action2.UP == action);          // true
+
+Enum的equals()與hashCode()基本上繼承了Object的行為，但被標示為final
+
+values()
+將內部維護A列舉實例的陣列 複製 後傳回,
+由於是複製品，因此改變傳回的陣列，並不會影響Action內部所維護的陣列
+
+
+!!!!!!!!!!!!!!!!
+!!!  建構式  !!!
+列舉型態繼承自Enum的類別，除了由編譯器自動產生的private建構式之外，
+也可以自行定義建構式，條件是
+不得為公開（public）建構式，也不可以於建構式中呼叫super()
+--> 看後面反編譯的結果
+
+
+package cc.openhome;
+
+public enum Priority {
+    MAX(10), NORM(5), MIN(1);        // 注意後面的 static 程式部分
+    
+    private int value;
+    
+    private Priority(int value) {    // 要定義是 private 
+        this.value = value;          // 注意下面的反編譯結果
+    }
+
+    public int value() {
+        return value;
+    }
+    
+    public static void main(String[] args) {
+        for(Priority priority : Priority.values()) {
+            System.out.printf("Priority(%s, %d)%n",
+                  priority, priority.value());
+        }
+    }
+}
+--> 就可以印出 10, 5, 1 (用內建)
+Priority(MAX, 10)
+Priority(NORM, 5)
+Priority(MIN, 1)
+
+
+Enum的ordinal()被宣告為final，不能重新定義，
+所以自定義了value()方法來傳回int值
+
+
+Priority.class反編譯後的結果：
+
+    private Priority(String s, int i, int value) {
+        super(s, i);
+        this.value = value;
+        // 自定義的建構式只是編譯器用來產生真正建構式時參考之用
+        // 有 call super()，所以自定義時不能再 call super()
+    }
+...
+    static
+    {
+        MAX = new Priority("MAX", 0, 10);   // 自定義的在最後
+        NORM = new Priority("NORM", 1, 5);
+        MIN = new Priority("MIN", 2, 1);
+        \$VALUES = (new Priority[] {
+            MAX, NORM, MIN
+        });
+    }
+
+可以透過Enum定義的name()方法取得列舉成員名稱字串，
+這適用於需要使用字串代表列舉值的場合，相當於toString()的作用，
+事實上toString()也只是傳回name成員的值；
+可透過ordinal()取得列舉int值，這適用於需要使用int代表列舉值的場合
+--> 但是是 0, 1, 2, ... --> 要自行設計 ex:
+
+    private Priority(int value) {    // 如上所述只是幫助真的建構用
+        this.value = value;
+    }
+    public int value() {             // 自行設計, 就會是 10, 5, 1
+        return value;
+    }
+
+
+!!!!!!!!!!!!!!!!!!
+!!!  實作介面  !!!
+定義列舉時還可以實作介面......
+
+package cc.openhome;
+public interface Command {
+    void execute();
+}
+
+import static java.lang.System.out;
+public enum Action3 implements Command {       // 實作介面
+    STOP, RIGHT, LEFT, UP, DOWN;
+    public void execute() {
+        switch(this) {
+            case STOP:
+                out.println("播放停止動畫");
+                break;
+...
+使用enum定義列舉時，使用implements實作介面，
+並將介面定義的方法實作，就如同定義class時使用implements實作介面
+
+
+特定值類別本體（Value-Specific Class Bodies）語法
+不使用 switch, 使用 {}
+
+public enum Action3 implements Command {
+    STOP {                        // 大括號後 implements Command execute()
+        public void execute() {
+            out.println("播放停止動畫");
+        }
+    }, 
+...
+    }, 
+    DOWN {
+        public void execute() {
+            out.println("播放向下動畫");
+        }        
+    };
+}
+-->
+看起來就像把 switch 分群切開
+
+每個列舉實例都會有不同的execute()實作，
+在職責分配上，比switch的方式清楚許多
+
+編譯器會將Action3標示為抽象類別
+public abstract class Action3 extends Enum implements Command {
+    ...
+}
+
+並為每個列舉成員後的{}語法，產生  匿名內部類別  ，
+這個匿名內部類別繼承了Action3，實作了execute()方法
+    ...
+    static
+    {
+        STOP = new Action3("STOP", 0) {      // 匿名內部類別 (繼承但無名)
+            public void execute() {          // 繼承了 Action3
+                System.out.println("\\u64AD\\u653E\\u505C\\u6B62\\u52D5\\u756B");
+            }
+        };
+        RIGHT = new Action3("STOP", 0) {
+            public void execute() {          // 實作了 execute() 方法
+                System.out.println("\\u64AD\\u653E\\u505C\\u6B62\\u52D5\\u756B");
+            }
+        };
+        ...
+    }
+
+特定值類別本體語法不僅在實作介面時可以使用，
+也可以運用在  重新定義父類別方法
+
+public enum Priority2 {
+    MAX(10) {         // 特定值類別本體（Value-Specific Class Bodies）語法
+        public String toString() {                   // 重新定義父類別方法
+            return format("(%2d) - 最大權限", value);
+        }
+    }, 
+    NORM(5) {
+        public String toString() {
+            return format("(%2d) - 普通權限", value);
+        }
+    }, 
+    MIN(1) {
+        public String toString() {
+            return format("(%2d) - 最小權限", value);
+        }
+    };
+...
+
+
+------------------------------------------
+
+關於標註 (git 出問題?)
+無法 commit?
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 

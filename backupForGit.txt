@@ -1,0 +1,34 @@
+﻿指令:
+git clone https://github.com/fish60/hello-world.git
+
+git remote add upstream https://github.com/fish60/hello-world.git
+
+git remote -v
+四行
+
+
+
+
+github help
+https://help.github.com/articles/set-up-git/
+
+
+
+
+試試看刪掉
+C:\Users\Chung-Che\.gitconfig
+
+裡面應該要像:
+
+[user]
+	name = fish60
+	email = jim39885@yahoo.com.tw
+[filter "lfs"]
+	clean = git-lfs clean %f
+	smudge = git-lfs smudge %f
+	required = true
+
+
+
+
+
