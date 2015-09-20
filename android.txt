@@ -1,0 +1,7 @@
+
+XML 描述檔與 R.java 檔
+https://code.google.com/p/androidbmi/wiki/XmlR
+
+
+Intent
+http://ticktick.blog.51cto.com/823160/1621957
