@@ -9,6 +9,14 @@ git remote -v
 
 
 
+清光重來 (ignore 後來才加的場合)
+git rm -r --cached .
+git add .
+
+
+
+
+
 github help
 https://help.github.com/articles/set-up-git/
 
